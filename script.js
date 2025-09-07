@@ -1,145 +1,161 @@
-// ============================
+// ======================
 // Variables globales
-// ============================
-const usuarios = [];
-let usuarioLogueado = null;
+// ======================
+let usuario = { nombre: "", email: "", password: "" };
+let sesionIniciada = false;
 
-
-// ============================
-// Función auxiliar: validar email
-// ============================
+// ======================
+// Funciones
+// ======================
 function validarEmail(email) {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// ============================
-// Registro paso a paso
-// ============================
+// Registro paso a paso con formulario en el prompt
 function registrarUsuario() {
+  // 1) Nombre
   let nombre = prompt(
-    "Regístrese luego inicie sesión, por favor\n" +
+    "Registrese luego inicie sesion, por favor\n" +
     "nombre:\n" +
     "e-mail:\n" +
     "contraseña:\n" +
     "confirmar contraseña:\n\n" +
-    "Ingrese su nombre:"
+    "ingrese su nombre"
   );
-  if (!nombre) return;
+  if (nombre === null || nombre.trim() === "") { alert("Registro cancelado."); return; }
+  nombre = nombre.trim();
 
-  let email = prompt(
-    "Regístrese luego inicie sesión, por favor\n" +
-    "nombre: " + nombre + "\n" +
-    "e-mail:\n" +
-    "contraseña:\n" +
-    "confirmar contraseña:\n\n" +
-    "Ingrese su e-mail:"
-  );
+  // 2) E-mail (con validación de formato)
+  let email;
+  do {
+    email = prompt(
+      "Registrese luego inicie sesion, por favor\n" +
+      `nombre: ${nombre}\n` +
+      "e-mail:\n" +
+      "contraseña:\n" +
+      "confirmar contraseña:\n\n" +
+      "ingrese su mail"
+    );
+    if (email === null) { alert("Registro cancelado."); return; }
+    email = email.trim();
+    if (!validarEmail(email)) alert("Formato de mail invalido");
+  } while (!validarEmail(email));
 
-  if (!validarEmail(email)) {
-    alert("Formato de mail inválido");
-    return;
-  }
+  // 3) Contraseña
+  let password;
+  do {
+    password = prompt(
+      "Registrese luego inicie sesion, por favor\n" +
+      `nombre: ${nombre}\n` +
+      `e-mail: ${email}\n` +
+      "contraseña:\n" +
+      "confirmar contraseña:\n\n" +
+      "ingrese su contraseña"
+    );
+    if (password === null || password === "") { alert("Registro cancelado."); return; }
+  } while (!password);
 
-  let password = prompt(
-    "Regístrese luego inicie sesión, por favor\n" +
-    "nombre: " + nombre + "\n" +
-    "e-mail: " + email + "\n" +
-    "contraseña:\n" +
-    "confirmar contraseña:\n\n" +
-    "Ingrese su contraseña:"
-  );
+  // 4) Confirmar contraseña
+  let confirmar;
+  do {
+    confirmar = prompt(
+      "Registrese luego inicie sesion, por favor\n" +
+      `nombre: ${nombre}\n` +
+      `e-mail: ${email}\n` +
+      `contraseña: ${"*".repeat(password.length)}\n` +
+      "confirmar contraseña:\n\n" +
+      "confirme su contraseña"
+    );
+    if (confirmar === null) { alert("Registro cancelado."); return; }
+    if (confirmar !== password) alert("Las contraseñas no coinciden. Intente nuevamente.");
+  } while (confirmar !== password);
 
-  let confirmPassword = prompt(
-    "Regístrese luego inicie sesión, por favor\n" +
-    "nombre: " + nombre + "\n" +
-    "e-mail: " + email + "\n" +
-    "contraseña: " + "*".repeat(password.length) + "\n" +
-    "confirmar contraseña:\n\n" +
-    "Confirme su contraseña:"
-  );
-
-  if (password !== confirmPassword) {
-    alert("Las contraseñas no coinciden. Intente nuevamente.");
-    return;
-  }
-
-  const existe = usuarios.some(u => u.email === email);
-  if (existe) {
-    alert("El usuario ya existe.");
-  } else {
-    usuarios.push({ nombre, email, password });
-    alert("Usuario registrado con éxito. Ahora inicie sesión.");
-  }
+  usuario = { nombre, email, password };
+  alert("Usuario registrado con éxito. Ahora inicie sesión.");
 }
 
-// ============================
-// Login con validación de email
-// ============================
+// Login (con validación de mail)
 function login() {
-  const email = prompt("Ingrese su email:");
-  if (!validarEmail(email)) {
-    alert("Formato de mail inválido");
+  if (!usuario.email) {
+    alert("Debe registrarse antes de iniciar sesión");
     return;
   }
 
-  const password = prompt("Ingrese su contraseña:");
-  const user = usuarios.find(u => u.email === email);
+  let email;
+  do {
+    email = prompt("Ingrese su e-mail:");
+    if (email === null) return;
+    if (!validarEmail(email)) alert("Formato de mail invalido");
+  } while (!validarEmail(email));
 
-  if (!user || user.password !== password) {
-    alert("Mail inexistente o mail y contraseña incorrectos");
-    return;
+  const pass = prompt("Ingrese su contraseña:");
+  if (email === usuario.email && pass === usuario.password) {
+    sesionIniciada = true;
+    alert(`Bienvenido ${usuario.nombre}`);
+    mostrarProductos();
+  } else {
+    alert("Credenciales incorrectas");
   }
-
-  usuarioLogueado = user;
-  alert(`Bienvenido ${user.nombre}`);
-
-  listarProductos();
 }
 
-// ============================
-// Listado de productos
-// ============================
-function listarProductos() {
-  let lista = "=== LISTADO DE PRODUCTOS ===\n\n";
-  productos.forEach((p) => {
-    lista += `ID: ${p.id} | ${p.nombre} | $${p.precio}\n`;
+// Mostrar productos + opción de agregar
+function mostrarProductos() {
+  let lista = "=== LISTA DE PRODUCTOS ===\n";
+  productos.forEach((p, i) => {
+    lista += `${i + 1}. ${p.nombre} - $${p.precio}\n`;
   });
 
-  alert(lista);
+  let opcion = confirm(lista + "\n\n¿Desea agregar un producto?\nAceptar = Sí, Cancelar = No");
+
+  if (opcion) { // ahora ACEPTAR = sí
+    cargarProducto();
+    mostrarProductos();
+  }
 }
 
-// ============================
-// Menú principal
-// ============================
-function menu() {
-  let opcion = "";
+// Cargar producto temporal
+function cargarProducto() {
+  let nombre = prompt("Ingrese el nombre del producto:");
+  if (!nombre) return;
 
+  let precio = prompt("Ingrese el precio del producto:");
+  if (!precio || isNaN(precio)) {
+    alert("Precio inválido");
+    return;
+  }
+
+  let confirmacion = confirm(`¿Desea agregar el producto?\n\nNombre: ${nombre}\nPrecio: $${precio}`);
+  
+  if (confirmacion) {
+    productos.push({ nombre, precio: parseFloat(precio) });
+    alert("Producto agregado correctamente.");
+  } else {
+    alert("Operación cancelada, no se agregó el producto.");
+  }
+}
+
+// ======================
+// Menú principal
+// ======================
+function menu() {
+  let opcion;
   do {
     opcion = prompt(
-      "Para acceder a la lista de productos Regístrese o Inicie Sesión\n\n" +
+      "Seleccione una opción:\n" +
       "1- Registrarse\n" +
       "2- Login\n" +
-      "3- Salir"
+      "3- Salir\n\n" +
+      "Para acceder a la lista de productos regístrese o inicie sesión."
     );
 
     switch (opcion) {
-      case "1":
-        registrarUsuario();
-        break;
-      case "2":
-        login();
-        break;
-      case "3":
-        alert("Saliendo del sistema...");
-        break;
-      default:
-        alert("Opción inválida");
+      case "1": registrarUsuario(); break;
+      case "2": login(); break;
+      case "3": alert("Gracias por usar el simulador. ¡Hasta pronto!"); break;
+      default: alert("Opción inválida");
     }
   } while (opcion !== "3");
 }
 
-// ============================
-// Iniciar simulador
-// ============================
+// Ejecutar
 menu();
